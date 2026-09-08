@@ -50,13 +50,14 @@ export class ConflictError extends HttpError {
 
 export function handleError(err: unknown): NextResponse {
   if (err instanceof HttpError) {
-    return NextResponse.json({ error: err.message }, { status: err.statusCode });
+    return NextResponse.json({ error: err.message, status: err.statusCode },
+      { status: err.statusCode });
   }
   
   if (err instanceof SyntaxError) {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON', status: 400 }, { status: 400 });
   }
 
   console.error(err)
-  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  return NextResponse.json({ error: 'Internal Server Error', status: 500 }, { status: 500 });
 }
