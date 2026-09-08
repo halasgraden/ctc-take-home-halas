@@ -33,7 +33,7 @@ export interface Restaurant {
   /** 0-5. A real number in JSON, not a string. */
   rating: number | null;
   /** ISO 8601 timestamp, e.g. "2026-01-01T00:00:00.000Z" */
-  createdAt: string;
+  created_at: string;
 }
 
 export interface Visit {
@@ -44,7 +44,7 @@ export interface Visit {
   amountSpent: number | null;
   notes: string | null;
   /** ISO 8601 timestamp. */
-  createdAt: string;
+  created_at: string;
 }
 
 // --- row mappers -------------------------------------------------------------
@@ -80,7 +80,7 @@ export function toRestaurant(row: Record<string, unknown>): Restaurant {
     cuisine: (row.cuisine as string | null) ?? null,
     address: (row.address as string | null) ?? null,
     rating: num(row.rating),
-    createdAt: isoTimestamp(row.createdAt),
+    created_at: isoTimestamp(row.created_at),
   };
 }
 
@@ -92,6 +92,6 @@ export function toVisit(row: Record<string, unknown>): Visit {
     date: dateOnly(row.date),
     amountSpent: num(row.amountSpent),
     notes: (row.notes as string | null) ?? null,
-    createdAt: isoTimestamp(row.createdAt),
+    created_at: isoTimestamp(row.created_at),
   };
 }

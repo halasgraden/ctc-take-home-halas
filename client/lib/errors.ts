@@ -20,8 +20,43 @@ import { NextResponse } from 'next/server';
  * TODO (A3): map known error types to proper status codes (400, 404, 409, ...)
  * TODO (A3): avoid leaking internal error details in responses
  */
-export function handleError(err: unknown): NextResponse {
-  console.error('Unhandled API error:', err);
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
 
+export class BadRequestError extends HttpError {
+  constructor(message = 'Bad Request') {
+    super(message, 400);
+  }
+}
+
+export class NotFoundError extends HttpError {
+  constructor(message = 'Not found') {
+    super(message, 404);
+  }
+}
+
+export class ConflictError extends HttpError {
+  constructor(message = 'Conflict') {
+    super(message, 409);
+  }
+}
+
+export function handleError(err: unknown): NextResponse {
+  if (err instanceof HttpError) {
+    return NextResponse.json({ error: err.message }, { status: err.statusCode });
+  }
+  
+  if (err instanceof SyntaxError) {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
+
+  console.error(err)
   return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 }

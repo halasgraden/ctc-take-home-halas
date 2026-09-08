@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { pool } from '@/db/pool';
 import { handleError } from '@/lib/errors';
 import { toRestaurant } from '@/lib/types';
+import { validateRestaurantBody } from '@/lib/validation';
 
 /**
  * GET /api/restaurants
@@ -10,11 +11,11 @@ import { toRestaurant } from '@/lib/types';
 export async function GET() {
   try {
     const { rows } = await pool.query(
-      'SELECT * FROM restaurants ORDER BY createdAt DESC'
+      'SELECT * FROM restaurants ORDER BY created_at DESC'
     );
     // Map every row - raw rows don't match the contract (NUMERIC comes back
     // as a string, timestamps as Date objects). See lib/types.ts.
-    return NextResponse.json(rows.map(toRestaurant));
+    return NextResponse.json(rows.map(toRestaurant), { status: 200 });
   } catch (err) {
     return handleError(err);
   }
@@ -32,5 +33,17 @@ export async function GET() {
  * bad bodies with a 400 rather than letting them reach the database.
  */
 export async function POST(_req: Request) {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 });
+  try {
+    const {name, cuisine, address, rating} = await _req.json();
+    const data = validateRestaurantBody({name, cuisine, address, rating});
+
+    const { rows } = await pool.query(
+      'INSERT INTO restaurants (name, cuisine, address, rating) VALUES ($1, $2, $3, $4) RETURNING *',
+      [data.name, data.cuisine, data.address, data.rating]
+    );
+
+    return NextResponse.json(toRestaurant(rows[0]), { status: 201 });
+  } catch (err) {
+    return handleError(err);
+  }
 }
