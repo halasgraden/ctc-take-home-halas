@@ -65,10 +65,26 @@ I also changed the request/response shapes to include website_url, image_url, an
 
 ```jsonc
 // request
-{ }
+{ "name": "string (required, max 120 chars)",
+  "cuisine": "string or null (max 80 chars)",
+  "address": "string or null (max 200 chars)",
+  "rating": "number 1-5 or null",
+  "website_url": "http(s) URL or null (max 2048 chars)",
+  "image_url": "http(s) URL or null (max 2048 chars)",
+  "tagSlugs": ["string array of tag slugs"]
+}
 
 // 201 response
-{ }
+{"id": "number",
+  "name": "string",
+  "cuisine": "string or null",
+  "address": "string or null",
+  "rating": "number 1-5 or null",
+  "website_url": "string or null",
+  "image_url": "string or null",
+  "createdAt": "ISO date string",
+  "tags": [{ "id": "number", "slug": "string", "label": "string" }]
+}
 ```
 
 ## Schema changes
@@ -106,6 +122,30 @@ curl -i -X POST http://localhost:3000/api/restaurants \
 **Part B** - the equivalent cases for what you built:
 
 ```bash
+curl -i http://localhost:3000/api/restaurants #GET all restaurants
+#POST a new restaurant
+curl -i -X POST http://localhost:3000/api/restaurants \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Local Bistro",
+    "cuisine": "French",
+    "address": "123 Main St",
+    "rating": 4,
+    "website_url": "https://example.com",
+    "image_url": "https://example.com/image.jpg",
+    "tagSlugs": ["local", "womens-owned"]
+  }'
+
+curl -i http://localhost:3000/api/restaurants/1 #GET a restaurant with tags
+curl -i -X DELETE http://localhost:3000/api/restaurants/1 #DELETE a restaurant
+
+curl -i -X POST http://localhost:3000/api/restaurants \
+  -H 'Content-Type: application/json' \
+  -d '{"name":""}' #no name edge case
+
+curl -i http://localhost:3000/api/restaurants/99999 # restaurant out of range edge case
+
+curl -i http://localhost:3000/api/tags #GET tags list
 
 ```
 
