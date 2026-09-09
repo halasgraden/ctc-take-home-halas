@@ -25,6 +25,12 @@
  * `unknown` until you check it. That check is your job (task A3).
  */
 
+export interface Tag {
+  id: number;
+  slug: string;
+  label: string;
+}
+
 export interface Restaurant {
   id: number;
   name: string;
@@ -32,6 +38,9 @@ export interface Restaurant {
   address: string | null;
   /** 0-5. A real number in JSON, not a string. */
   rating: number | null;
+  website_url: string | null;
+  image_url: string | null;
+  tags: Tag[];
   /** ISO 8601 timestamp, e.g. "2026-01-01T00:00:00.000Z" */
   created_at: string;
 }
@@ -72,6 +81,28 @@ function dateOnly(value: unknown): string {
   return `${value.getFullYear()}-${month}-${day}`;
 }
 
+function toTagArray(value: unknown): Tag[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((t) => t && typeof t === 'object' && (t as Record<string, unknown>).id != null)
+    .map((t) => {
+      const row = t as Record<string, unknown>;
+      return {
+        id: Number(row.id),
+        slug: String(row.slug),
+        label: String(row.label),
+      };
+    });
+}
+
+export function toTag(row: Record<string, unknown>): Tag {
+  return {
+    id: Number(row.id),
+    slug: String(row.slug),
+    label: String(row.label),
+  };
+}
+
 /** Convert a `restaurants` row into the shape the API returns. */
 export function toRestaurant(row: Record<string, unknown>): Restaurant {
   return {
@@ -80,6 +111,9 @@ export function toRestaurant(row: Record<string, unknown>): Restaurant {
     cuisine: (row.cuisine as string | null) ?? null,
     address: (row.address as string | null) ?? null,
     rating: num(row.rating),
+    website_url: (row.website_url as string | null) ?? null,
+    image_url: (row.image_url as string | null) ?? null,
+    tags: toTagArray(row.tags),
     created_at: isoTimestamp(row.created_at),
   };
 }

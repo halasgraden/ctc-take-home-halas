@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/db/pool';
 import { handleError, NotFoundError } from '@/lib/errors';
+import { SELECT_RESTAURANT_BY_ID, writeRestaurantTags } from '@/lib/restaurants';
 import { toRestaurant } from '@/lib/types';
 import { parseRestaurantId, validateRestaurantBody } from '@/lib/validation';
 
@@ -8,15 +9,12 @@ type Params = { params: { id: string } };
 
 /**
  * GET /api/restaurants/:id
- * Returns a single restaurant, or 404 if it doesn't exist.
+ * Returns a single restaurant with its tags, or 404 if it doesn't exist.
  */
 export async function GET(_req: Request, { params }: Params) {
   try {
     const id = parseRestaurantId(params.id);
-    const { rows } = await pool.query(
-      'SELECT * FROM restaurants WHERE id = $1',
-      [id]
-    );
+    const { rows } = await pool.query(SELECT_RESTAURANT_BY_ID, [id]);
 
     if (rows.length === 0) {
       throw new NotFoundError('Restaurant not found');
@@ -30,49 +28,57 @@ export async function GET(_req: Request, { params }: Params) {
 
 /**
  * PUT /api/restaurants/:id
- * Update an existing restaurant.
- *
- * TODO (A2): implement. Update the row matching :id and return the updated
- * record (or 404 if it doesn't exist). Validate the body the same way POST does.
+ * Replace the restaurant's fields (and its tag set) atomically.
  */
-export async function PUT(_req: Request, { params }: Params) {
+export async function PUT(req: Request, { params }: Params) {
+  const client = await pool.connect();
   try {
     const id = parseRestaurantId(params.id);
-    const {name, cuisine, address, rating} = await _req.json();
-    const data = validateRestaurantBody({name, cuisine, address, rating});
+    const data = validateRestaurantBody(await req.json());
 
-    const { rows } = await pool.query(
-      'UPDATE restaurants SET name = $1, cuisine = $2, address = $3, rating = $4 WHERE id = $5 RETURNING *',
-      [data.name, data.cuisine, data.address, data.rating, id]
+    await client.query('BEGIN');
+
+    const update = await client.query(
+      `UPDATE restaurants
+          SET name        = $1,
+              cuisine     = $2,
+              address     = $3,
+              rating      = $4,
+              website_url = $5,
+              image_url   = $6
+        WHERE id = $7
+        RETURNING id`,
+      [data.name, data.cuisine, data.address, data.rating, data.website_url, data.image_url, id]
     );
 
-    if (rows.length === 0) {
+    if (update.rows.length === 0) {
       throw new NotFoundError('Restaurant not found');
     }
 
-    return NextResponse.json(toRestaurant(rows[0]), { status: 200 });
+    await client.query('DELETE FROM restaurant_tags WHERE restaurant_id = $1', [id]);
+    await writeRestaurantTags(client, id, data.tagSlugs);
 
+    const { rows } = await client.query(SELECT_RESTAURANT_BY_ID, [id]);
+    await client.query('COMMIT');
+    return NextResponse.json(toRestaurant(rows[0]), { status: 200 });
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     return handleError(err);
+  } finally {
+    client.release();
   }
 }
 
 /**
  * DELETE /api/restaurants/:id
- * Delete a restaurant.
- *
- * TODO (A2): implement. Delete the row matching :id and return 204 (or 404
- * if it doesn't exist).
- *
- * Worth noticing: the migration already made a call about what happens to that
- * restaurant's visits. Go read it. If you disagree with it, say so in your
- * write-up.
+ * Delete a restaurant (visits + tag rows cascade). 204 on success, 404 if missing.
  */
 export async function DELETE(_req: Request, { params }: Params) {
   try {
     const id = parseRestaurantId(params.id);
     const { rows } = await pool.query(
-      'DELETE FROM restaurants WHERE id = $1 RETURNING * ', [id]
+      'DELETE FROM restaurants WHERE id = $1 RETURNING id',
+      [id]
     );
 
     if (rows.length === 0) {
@@ -80,7 +86,6 @@ export async function DELETE(_req: Request, { params }: Params) {
     }
 
     return new NextResponse(null, { status: 204 });
-
   } catch (err) {
     return handleError(err);
   }

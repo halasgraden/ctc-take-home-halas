@@ -8,23 +8,49 @@
 > honest "I ran out of time on X and here's what I'd do" than a polished list of
 > accomplishments. **Submit this even if you didn't finish** - see CHALLENGE.md.
 
+UNFORMATTED IDEATION/PLANNING: https://docs.google.com/document/d/1hx8s_anzgU9Lm21hllqRBOhq7lVH4uW_zhOSk0JLTp8/edit?usp=sharing
+
 ## 1. What did you build for Part B, and why that?
+
+For Part B, I built a more accessible UI and the ability to add restaurants. I wanted the site to be accessible, aware, and usable. 
+
+On the accessible end, I added aria-labels for text-to-speech readers and images so the user can better remember the restaurant they visited.
+
+On the awareness end, I added tags for each restaurant (local, minority-owned, women-owned, etc.) so that upon repeat visits, the user could pick a place they wanted to support (such as supporting local). If I had more time, I would have loved to make a search and filter using names and tags, as well as collections based on these tags.
+
+Finally, on the usability end, I wanted some way for the user to interact with the site. I first added URLs (I just have example URLs currently) so that the user could visit the restaurant's website or Google Maps page. Next, I added the ability to add a restaurant to allow the user to expand upon the current data.
+
+I chose these features to make the site more accessibility concious and usable, regardless of the intent or capability of the user. Whenever I design and develop a web-based product, I put these principles first before everything.
 
 > What made you pick it over everything else you could have built? This is the
 > question we care most about - the _why_ matters more than the _what_.
 
 ## 2. What did you decide, and what did you rule out?
 
+I decided on expanding the data model to include website_url, image_url, and tags; I believed the current restaurant component was not descriptive enough, and needed something more to make it more memorable. This included adding images and external links to the restaurant. Additionally, I wanted to add X-owned tags to ensure that the user could be concious of what restaurants they were supporting and understand more about where they eat.
+
+However, I ruled out the search and filter system. To me, the site currently feels incomplete, especially with the addition of tags. A search and filter system would have made complete sense given a better way to group restaurants and the prospect of this list growing to new lengths.
+
+(couldn't pass up adding brennen though...)
+
 > Route shapes, data model, where the logic lives, what you deliberately didn't
 > do. Name a tradeoff you're not sure you got right.
 
 ## 3. Where did you cut corners?
+
+In any case, I believe in human-first work. However, given the time constraint, and for full transparency, I turned to AI for a lot of this take-home. I completed Part A myself (it was mostly familiar), but used AI for a lot of Part B. A lot of it I understand and implemented using a Plan feature, but I still always prefer to complete the work myself and with integrity. With more time, I would have made these designs in Figma myself, worked closer with the data, and implemented everything myself. I am not against AI at all, I just believe that we should try our best to create authentic work.
+
+Additionally, in future iterations I would have pulled live data from restaurants instead of using placeholder images and URLs.
 
 > What would you fix first with another day?
 
 ---
 
 ## Part B: routes
+
+I added a GET /api/tags endpoint to allow the user to dynamically fetch and select tags, most of which were pre-populated by me.
+
+I also changed the request/response shapes to include website_url, image_url, and tags.
 
 > Every endpoint you added, with its request and response shapes, so we can
 > exercise it without reverse-engineering your code. Add or remove rows as
@@ -47,11 +73,15 @@
 
 ## Schema changes
 
+I added website_url (TEXT) and image_url (TEXT) to the restaurants table, while also creating a tags table pre-populated with 6 tags. The restaurant_tags table links the two using foreign keys.
+
 > Any migrations you added (`002_*.sql`, ...), new tables or columns, and
 > anything a reviewer needs to run beyond `./setup.sh`. Write "none" if there
 > were none.
 
 ## How I verified this
+
+I mainly used the curl verification checks on CHALLENGE.md and read the responses. Thankfully, my HTTP status codes were the same as the API checklist. This included disallowing ratings outside of 0-5, wrong IDs, and not receiving a name upon creation.
 
 > How you checked your work - the happy paths _and_ the failures. `curl`
 > commands, a Postman collection, a scratch script, screenshots: whatever you
@@ -80,6 +110,10 @@ curl -i -X POST http://localhost:3000/api/restaurants \
 ```
 
 ## Known issues / what I'd do next
+
+I would add a search and filter system, as I believe this application can get clunky as more restaurants are added. This would also make good use of the restaurant tags.
+
+Additionally, I would create curated collections of X-owned restaurants so that the user can conciously choose restaurants to support, and explore beyond restaurants they have already gone to.
 
 > Anything broken, unfinished, or that you know is wrong. Being upfront here
 > costs you nothing and tells us a lot.

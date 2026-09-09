@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server';
 import { pool } from '@/db/pool';
 import { handleError } from '@/lib/errors';
+import { SELECT_RESTAURANTS, writeRestaurantTags } from '@/lib/restaurants';
 import { toRestaurant } from '@/lib/types';
 import { validateRestaurantBody } from '@/lib/validation';
 
 /**
  * GET /api/restaurants
- * Returns all restaurants.
+ * Returns all restaurants (newest first), each with its tag list.
  */
 export async function GET() {
   try {
     const { rows } = await pool.query(
-      'SELECT * FROM restaurants ORDER BY created_at DESC'
+      `${SELECT_RESTAURANTS} ORDER BY r.created_at DESC`
     );
-    // Map every row - raw rows don't match the contract (NUMERIC comes back
-    // as a string, timestamps as Date objects). See lib/types.ts.
     return NextResponse.json(rows.map(toRestaurant), { status: 200 });
   } catch (err) {
     return handleError(err);
@@ -23,27 +22,38 @@ export async function GET() {
 
 /**
  * POST /api/restaurants
- * Create a new restaurant.
- *
- * TODO (A2): implement. Read the restaurant fields from the request body,
- * insert a row, and return the created restaurant with a 201 status.
- *
- * TODO (A3): validate before you insert. Nothing validates anything today, so
- * `rating` happily accepts 6. Decide what valid means for each field and reject
- * bad bodies with a 400 rather than letting them reach the database.
+ * Create a new restaurant. Tag associations are inserted in the same
+ * transaction as the restaurant row - an invalid tag slug rolls the whole
+ * thing back with a 400.
  */
-export async function POST(_req: Request) {
+export async function POST(req: Request) {
+  const client = await pool.connect();
   try {
-    const {name, cuisine, address, rating} = await _req.json();
-    const data = validateRestaurantBody({name, cuisine, address, rating});
+    const data = validateRestaurantBody(await req.json());
 
-    const { rows } = await pool.query(
-      'INSERT INTO restaurants (name, cuisine, address, rating) VALUES ($1, $2, $3, $4) RETURNING *',
-      [data.name, data.cuisine, data.address, data.rating]
+    await client.query('BEGIN');
+
+    const insert = await client.query(
+      `INSERT INTO restaurants (name, cuisine, address, rating, website_url, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+      [data.name, data.cuisine, data.address, data.rating, data.website_url, data.image_url]
+    );
+    const id = insert.rows[0].id as number;
+
+    await writeRestaurantTags(client, id, data.tagSlugs);
+
+    const { rows } = await client.query(
+      `${SELECT_RESTAURANTS} WHERE r.id = $1`,
+      [id]
     );
 
+    await client.query('COMMIT');
     return NextResponse.json(toRestaurant(rows[0]), { status: 201 });
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     return handleError(err);
+  } finally {
+    client.release();
   }
 }
