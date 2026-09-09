@@ -1,13 +1,5 @@
 # Write-up
 
-> This is the skeleton - replace everything in blockquotes with your own words
-> and delete the prompts as you go. Aim for **~300 words** across the four
-> questions; the route reference below can be as long as it needs to be.
->
-> Write it like you're handing the work to a teammate. We'd rather read an
-> honest "I ran out of time on X and here's what I'd do" than a polished list of
-> accomplishments. **Submit this even if you didn't finish** - see CHALLENGE.md.
-
 UNFORMATTED IDEATION/PLANNING: https://docs.google.com/document/d/1hx8s_anzgU9Lm21hllqRBOhq7lVH4uW_zhOSk0JLTp8/edit?usp=sharing
 
 ## 1. What did you build for Part B, and why that?
@@ -22,8 +14,6 @@ Finally, on the usability end, I wanted some way for the user to interact with t
 
 I chose these features to make the site more accessibility concious and usable, regardless of the intent or capability of the user. Whenever I design and develop a web-based product, I put these principles first before everything.
 
-> What made you pick it over everything else you could have built? This is the
-> question we care most about - the _why_ matters more than the _what_.
 
 ## 2. What did you decide, and what did you rule out?
 
@@ -33,8 +23,6 @@ However, I ruled out the search and filter system. To me, the site currently fee
 
 (couldn't pass up adding brennen though...)
 
-> Route shapes, data model, where the logic lives, what you deliberately didn't
-> do. Name a tradeoff you're not sure you got right.
 
 ## 3. Where did you cut corners?
 
@@ -42,7 +30,6 @@ In any case, I believe in human-first work. However, given the time constraint, 
 
 Additionally, in future iterations I would have pulled live data from restaurants instead of using placeholder images and URLs.
 
-> What would you fix first with another day?
 
 ---
 
@@ -51,17 +38,6 @@ Additionally, in future iterations I would have pulled live data from restaurant
 I added a GET /api/tags endpoint to allow the user to dynamically fetch and select tags, most of which were pre-populated by me.
 
 I also changed the request/response shapes to include website_url, image_url, and tags.
-
-> Every endpoint you added, with its request and response shapes, so we can
-> exercise it without reverse-engineering your code. Add or remove rows as
-> needed; delete this section if your Part B added no routes.
-
-| Method and path | What it does | Success | Errors       |
-| --------------- | ------------ | ------- | ------------ |
-| `GET /api/...`  |              | `200` + | `404` if ... |
-| `POST /api/...` |              | `201` + | `400` on ... |
-
-**`POST /api/...`**
 
 ```jsonc
 // request
@@ -91,20 +67,10 @@ I also changed the request/response shapes to include website_url, image_url, an
 
 I added website_url (TEXT) and image_url (TEXT) to the restaurants table, while also creating a tags table pre-populated with 6 tags. The restaurant_tags table links the two using foreign keys.
 
-> Any migrations you added (`002_*.sql`, ...), new tables or columns, and
-> anything a reviewer needs to run beyond `./setup.sh`. Write "none" if there
-> were none.
-
 ## How I verified this
 
 I mainly used the curl verification checks on CHALLENGE.md and read the responses. Thankfully, my HTTP status codes were the same as the API checklist. This included disallowing ratings outside of 0-5, wrong IDs, and not receiving a name upon creation.
 
-> How you checked your work - the happy paths _and_ the failures. `curl`
-> commands, a Postman collection, a scratch script, screenshots: whatever you
-> actually used. Paste the commands.
->
-> This is much faster for us to review than working it out ourselves, and it's
-> how you show you checked the edge cases.
 
 **Part A** - the contract table in CHALLENGE.md, every row including the error
 cases:
@@ -154,6 +120,3 @@ curl -i http://localhost:3000/api/tags #GET tags list
 I would add a search and filter system, as I believe this application can get clunky as more restaurants are added. This would also make good use of the restaurant tags.
 
 Additionally, I would create curated collections of X-owned restaurants so that the user can conciously choose restaurants to support, and explore beyond restaurants they have already gone to.
-
-> Anything broken, unfinished, or that you know is wrong. Being upfront here
-> costs you nothing and tells us a lot.
